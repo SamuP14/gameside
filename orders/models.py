@@ -21,3 +21,6 @@ class Order(models.Model):
         on_delete=models.CASCADE,
     )
     games = models.ManyToManyField('games.Game', related_name='game_orders')
+
+    def __str__(self):
+        return self.status

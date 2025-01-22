@@ -18,10 +18,15 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/games/', include('games.urls')),
+    path('api/platforms/', include('platforms.urls')),
+    path('api/categories/', include('categories.urls')),
+    path('api/orders/', include('orders.urls')),
+    path('api/users/', include('users.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:
