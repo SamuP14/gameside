@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
@@ -20,11 +22,23 @@ class Game(models.Model):
     pegi = models.IntegerField(choices=PEGI)
     category = models.ForeignKey(
         'categories.Category',
-        related_name='category_games',
+        related_name='game_categories',
         on_delete=models.SET_NULL,
+        null=True,
     )
-    platforms = models.ManyToManyField('platforms.Platform', related_name='platforms_games')
+    platforms = models.ManyToManyField('platforms.Platform', related_name='game_platforms')
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.title)
         super().save(*args, **kwargs)
+
+
+class Review(models.Model):
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(5)]
+    )
+    comment = models.TextField()
+    game = models.ForeignKey('games.Game', related_name='game_reviews', on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name='user_reviews', on_delete=models.CASCADE
+    )
