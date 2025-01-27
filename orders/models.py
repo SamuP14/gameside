@@ -6,12 +6,12 @@ from django.db import models
 
 class Order(models.Model):
     class Status(models.IntegerChoices):
-        INITIATED = 0
-        CONFIRMED = 1
-        CANCELLED = 2
+        CANCELLED = -1
+        INITIATED = 1
+        CONFIRMED = 2
         PAID = 3
 
-    status = models.IntegerField(choices=Status)
+    status = models.SmallIntegerField(choices=Status, default=Status.INITIATED)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     key = models.UUIDField(blank=True, default=uuid4)
@@ -23,4 +23,4 @@ class Order(models.Model):
     games = models.ManyToManyField('games.Game', related_name='game_orders')
 
     def __str__(self):
-        return self.status
+        return f'{self.status}'

@@ -24,5 +24,7 @@ class ReviewAdmin(admin.ModelAdmin):
         'rating',
         'comment',
         'game',
-        'user',
+        'author',
+        'created_at',
+        'updated_at',
     ]
