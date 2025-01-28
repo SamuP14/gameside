@@ -1,7 +1,7 @@
 from shared.serializers import BaseSerializer
 
 
-class PlatformSerializer(BaseSerializer):
+class CategorySerializer(BaseSerializer):
     def __init__(self, to_serialize, *, fields=[], request=None):
         super().__init__(to_serialize, fields=fields, request=request)
 
@@ -11,5 +11,5 @@ class PlatformSerializer(BaseSerializer):
             'name': instance.name,
             'slug': instance.slug,
             'description': instance.description,
-            'logo': self.build_url(instance.logo.url),
+            'color': instance.color,
         }

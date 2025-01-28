@@ -9,6 +9,14 @@ def order_detail(request):
     return render(request)
 
 
+def order_game_list(request):
+    return render(request)
+
+
+def add_game_to_order(request):
+    return render(request)
+
+
 def confirm_order(request):
     return render(request)
 
