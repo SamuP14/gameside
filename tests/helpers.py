@@ -8,9 +8,9 @@ def build_url(url: str) -> str:
     return urljoin(BASE_URL, url)
 
 
-def datetime_isoformats_are_close(dtiso1: str, dtiso2) -> bool:
+def datetime_isoformats_are_close(dtiso1: str, dtiso2: str = '') -> bool:
     dt1 = datetime.fromisoformat(dtiso1)
-    dt2 = datetime.fromisoformat(dtiso2)
+    dt2 = datetime.fromisoformat(dtiso2) if dtiso2 else datetime.now()
     return abs((dt1 - dt2).total_seconds()) < 1
 
 
@@ -74,3 +74,13 @@ def compare_reviews(rreview, ereview) -> None:
     compare_users(rreview['author'], ereview.author)
     assert datetime_isoformats_are_close(rreview['created_at'], ereview.created_at.isoformat())
     assert datetime_isoformats_are_close(rreview['updated_at'], ereview.updated_at.isoformat())
+
+
+def get_json(client, url: str) -> tuple:
+    response = client.get(url)
+    return response.status_code, response.json()
+
+
+def post_json(client, url: str, data: dict = {}) -> tuple:
+    response = client.post(url, data, content_type='application/json')
+    return response.status_code, response.json()

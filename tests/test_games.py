@@ -1,14 +1,17 @@
-import json
+import uuid
 
 import pytest
-from django.contrib.auth.models import User
 from model_bakery import baker
 
-from categories.models import Category
 from games.models import Game, Review
 from platforms.models import Platform
 
-from .helpers import compare_games, compare_reviews
+from .helpers import (
+    compare_games,
+    compare_reviews,
+    get_json,
+    post_json,
+)
 
 # ==============================================================================
 # GAMES
@@ -17,63 +20,64 @@ from .helpers import compare_games, compare_reviews
 
 @pytest.mark.django_db
 def test_game_list(client):
-    for game in (games := baker.make(Game, _fill_optional=True, _quantity=10)):
+    baker.make(Game, _fill_optional=True, _quantity=10)
+    for game in (games := Game.objects.all()):
         game.platforms.set(baker.make(Platform, _fill_optional=True, _quantity=3))
-    response = client.get('/api/games/')
-    assert response.status_code == 200
-    response_body = json.loads(response.content)
-    for rgame, egame in zip(response_body, games):
-        compare_games(rgame, egame)
+    status, response = get_json(client, '/api/games/')
+    assert status == 200
+    for game in response:
+        compare_games(game, games.get(pk=game['id']))
 
 
 @pytest.mark.django_db
 def test_game_list_fails_when_method_is_not_allowed(client):
-    response = client.post('/api/games/')
-    assert response.status_code == 405
+    status, response = post_json(client, '/api/games/')
+    assert status == 405
+    assert response == {'error': 'Method not allowed'}
 
 
 @pytest.mark.django_db
-def test_game_list_with_querystring_filter(client):
-    test_category = baker.make(Category, slug='category-slug', _fill_optional=True)
-    test_platform = baker.make(Platform, slug='platform-slug', _fill_optional=True)
-    games = baker.make(Game, category=test_category, _fill_optional=True, _quantity=10)
-    for game in games:
-        game.platforms.add(test_platform)
+def test_game_list_with_querystring_filter(client, category, platform):
+    baker.make(Game, category=category, _fill_optional=True, _quantity=10)
+    for game in (games := Game.objects.all()):
+        game.platforms.add(platform)
         game.platforms.add(baker.make(Platform, _fill_optional=True))
-    response = client.get('/api/games/?category=category-test&platform=platform-test')
-    assert response.status_code == 200
-    response_body = json.loads(response.content)
-    for rgame, egame in zip(response_body, games):
-        compare_games(rgame, egame)
+    status, response = get_json(
+        client, f'/api/games/?category={category.slug}&platform={platform.slug}'
+    )
+    assert status == 200
+    for game in response:
+        compare_games(game, games.get(pk=game['id']))
 
 
 @pytest.mark.django_db
 def test_game_list_with_querystring_filter_fails_when_method_is_not_allowed(client):
-    response = client.post('/api/games/?category=category-test&platform=platform-test')
-    assert response.status_code == 405
+    status, response = post_json(
+        client, '/api/games/?category=category-test&platform=platform-test'
+    )
+    assert status == 405
+    assert response == {'error': 'Method not allowed'}
 
 
 @pytest.mark.django_db
-def test_game_detail(client):
-    game = baker.make(Game, _fill_optional=True)
-    response = client.get(f'/api/games/{game.slug}/')
-    assert response.status_code == 200
-    rgame = json.loads(response.content)
-    compare_games(rgame, game)
+def test_game_detail(client, game):
+    status, response = get_json(client, f'/api/games/{game.slug}/')
+    assert status == 200
+    compare_games(response, game)
 
 
 @pytest.mark.django_db
 def test_game_detail_fails_when_method_is_not_allowed(client):
-    response = client.post('/api/games/test/')
-    assert response.status_code == 405
+    status, response = post_json(client, '/api/games/test/')
+    assert status == 405
+    assert response == {'error': 'Method not allowed'}
 
 
 @pytest.mark.django_db
 def test_game_detail_fails_when_game_does_not_exist(client):
-    response = client.get('/api/games/test/')
-    assert response.status_code == 404
-    response_body = json.loads(response.content)
-    assert response_body['error'] == 'Game not found'
+    status, response = get_json(client, '/api/games/test/')
+    assert status == 404
+    assert response == {'error': 'Game not found'}
 
 
 # ==============================================================================
@@ -82,54 +86,86 @@ def test_game_detail_fails_when_game_does_not_exist(client):
 
 
 @pytest.mark.django_db
-def test_review_list(client):
-    game = baker.make(Game, _fill_optional=True)
-    reviews = baker.make(Review, game=game, _fill_optional=True, _quantity=10)
-    response = client.get(f'/api/games/{game.slug}/reviews/')
-    assert response.status_code == 200
-    response_body = json.loads(response.content)
-    for rreview, ereview in zip(response_body, reviews):
-        compare_reviews(rreview, ereview)
+def test_review_list(client, game):
+    baker.make(Review, game=game, _fill_optional=True, _quantity=10)
+    status, response = get_json(client, f'/api/games/{game.slug}/reviews/')
+    assert status == 200
+    for review in response:
+        compare_reviews(review, game.reviews.get(pk=review['id']))
 
 
 @pytest.mark.django_db
 def test_review_list_fails_when_method_is_not_allowed(client):
-    response = client.post('/api/games/test/reviews/')
-    assert response.status_code == 405
+    status, response = post_json(client, '/api/games/test/reviews/')
+    assert status == 405
+    assert response == {'error': 'Method not allowed'}
 
 
 @pytest.mark.django_db
-def test_review_detail(client):
-    game = baker.make(Game, _fill_optional=True)
-    review = baker.make(Review, game=game, _fill_optional=True)
-    response = client.get(f'/api/games/reviews/{review.pk}/')
-    assert response.status_code == 200
-    rreview = json.loads(response.content)
-    compare_reviews(rreview, review)
+def test_review_detail(client, game, review):
+    review.game = game
+    review.save()
+    status, response = get_json(client, f'/api/games/reviews/{review.pk}/')
+    assert status == 200
+    compare_reviews(response, review)
 
 
 @pytest.mark.django_db
 def test_review_detail_fails_when_method_is_not_allowed(client):
-    response = client.post('/api/games/reviews/1/')
-    assert response.status_code == 405
+    status, response = post_json(client, '/api/games/reviews/1/')
+    assert status == 405
+    assert response == {'error': 'Method not allowed'}
 
 
 @pytest.mark.django_db
-def test_add_review(client):
-    user = baker.make(User, _fill_optional=True)
-    token = baker.make('users.Token', user=user)
-    game = baker.make(Game, _fill_optional=True)
-    data = {
-        'token': str(token.key),
-        'rating': 5,
-        'comment': 'This is a test comment',
-    }
-    response = client.post(
-        f'/api/games/{game.slug}/reviews/add/', json.dumps(data), content_type='application/json'
-    )
-    assert response.status_code == 200
-    ereview = Review.objects.get(game=game)
-    assert ereview.rating == data['rating']
-    assert ereview.comment == data['comment']
-    assert ereview.game == game
-    assert ereview.author == user
+def test_add_review(client, token, game):
+    user = token.user
+    game.user = user
+    game.save()
+    data = {'token': token.key, 'rating': 5, 'comment': 'This is a test comment'}
+    status, response = post_json(client, f'/api/games/{game.slug}/reviews/add/', data)
+    assert status == 200
+    assert response == {'id': 1}
+    review = Review.objects.get(pk=response['id'])
+    assert review.rating == data['rating']
+    assert review.comment == data['comment']
+    assert review.game == game
+    assert review.author == user
+
+
+@pytest.mark.django_db
+def test_add_review_fails_when_json_body_is_invalid(client):
+    status, response = post_json(client, '/api/games/test/reviews/add/', '{')
+    assert status == 400
+    assert response == {'error': 'Invalid JSON body'}
+
+
+@pytest.mark.django_db
+def test_add_review_fails_when_missing_required_fields(client):
+    status, response = post_json(client, '/api/games/test/reviews/add/', '{}')
+    assert status == 400
+    assert response == {'error': 'Missing required fields'}
+
+
+@pytest.mark.django_db
+def test_add_review_fails_when_rating_is_out_of_range(client, token, game):
+    data = {'token': token.key, 'rating': 6, 'comment': 'This is a test comment'}
+    status, response = post_json(client, f'/api/games/{game.slug}/reviews/add/', data)
+    assert status == 400
+    assert response == {'error': 'Rating is out of range'}
+
+
+@pytest.mark.django_db
+def test_add_review_fails_when_token_is_invalid(client):
+    data = {'token': str(uuid.uuid4()), 'rating': 1, 'comment': 'This is a test comment'}
+    status, response = post_json(client, '/api/games/test/reviews/add/', data)
+    assert status == 401
+    assert response == {'error': 'Invalid token'}
+
+
+@pytest.mark.django_db
+def test_add_review_fails_when_game_not_found(client, token):
+    data = {'token': token.key, 'rating': 1, 'comment': 'This is a test comment'}
+    status, response = post_json(client, '/api/games/test/reviews/add/', data)
+    assert status == 404
+    assert response == {'error': 'Game not found'}

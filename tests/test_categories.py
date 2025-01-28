@@ -1,47 +1,43 @@
-import json
-
 import pytest
 from model_bakery import baker
 
 from categories.models import Category
 
-from .helpers import compare_categories
+from .helpers import compare_categories, get_json, post_json
 
 
 @pytest.mark.django_db
 def test_category_list(client):
-    categories = baker.make(Category, _fill_optional=True, _quantity=10)
-    response = client.get('/api/categories/')
-    assert response.status_code == 200
-    response_body = json.loads(response.content)
-    for rcategory, ecategory in zip(response_body, categories):
-        compare_categories(rcategory, ecategory)
+    baker.make(Category, _fill_optional=True, _quantity=10)
+    categories = Category.objects.all()
+    status, response = get_json(client, '/api/categories/')
+    assert status == 200
+    for category in response:
+        compare_categories(category, categories.get(pk=category['id']))
 
 
 @pytest.mark.django_db
 def test_category_list_fails_when_method_is_not_allowed(client):
-    response = client.post('/api/categories/')
-    assert response.status_code == 405
+    status, response = post_json(client, '/api/categories/')
+    assert status == 405
+    assert response == {'error': 'Method not allowed'}
 
 
 @pytest.mark.django_db
-def test_category_detail(client):
-    category = baker.make(Category, _fill_optional=True)
-    response = client.get(f'/api/categories/{category.slug}/')
-    assert response.status_code == 200
-    rcategory = json.loads(response.content)
-    compare_categories(rcategory, category)
+def test_category_detail(client, category):
+    status, response = get_json(client, f'/api/categories/{category.slug}/')
+    assert status == 200
+    compare_categories(response, category)
 
 
 @pytest.mark.django_db
 def test_category_detail_fails_when_method_is_not_allowed(client):
-    response = client.post('/api/categories/test/')
-    assert response.status_code == 405
+    status, _ = post_json(client, '/api/categories/test/')
+    assert status == 405
 
 
 @pytest.mark.django_db
 def test_category_detail_fails_when_category_does_not_exist(client):
-    response = client.get('/api/categories/test/')
-    assert response.status_code == 404
-    response_body = json.loads(response.content)
-    assert response_body['error'] == 'Category not found'
+    status, response = get_json(client, '/api/categories/test/')
+    assert status == 404
+    assert response == {'error': 'Category not found'}
