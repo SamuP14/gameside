@@ -4,7 +4,7 @@ from json.decoder import JSONDecodeError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from users.models import Token  # noqa
+from users.models import Token
 
 from .models import Game, Review
 from .serializers import GameSerializer, ReviewSerializer
@@ -48,9 +48,14 @@ def review_list(request, game_slug):
 
 def review_detail(request, review_pk):
     if request.method == 'GET':
-        review = Review.objects.get(pk=review_pk)
-        serializer = ReviewSerializer(review, request=request)
-        return serializer.json_response()
+        try:
+            review = Review.objects.get(pk=review_pk)
+        except Game.DoesNotExist:
+            return JsonResponse({'error': 'Review not found'}, status=404)
+        else:
+            review = Review.objects.get(pk=review_pk)
+            serializer = ReviewSerializer(review, request=request)
+            return serializer.json_response()
     else:
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
