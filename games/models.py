@@ -35,6 +35,12 @@ class Game(models.Model):
     def __str__(self):
         return self.title
 
+    def rest_stock(self):
+        self.stock -= 1
+
+    def sum_stock(self):
+        self.stock += 1
+
 
 class Review(models.Model):
     rating = models.PositiveSmallIntegerField(

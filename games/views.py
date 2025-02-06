@@ -5,6 +5,8 @@ from json.decoder import JSONDecodeError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+from categories.models import Category
+from platforms.models import Platform
 from shared.decorators import get_required, post_required
 from users.models import Token
 
@@ -14,9 +16,21 @@ from .serializers import GameSerializer, ReviewSerializer
 
 @get_required
 def game_list(request):
+    platform = request.GET.get('platform', None)
+    category = request.GET.get('category', None)
+
     games = Game.objects.all()
-    serializer = GameSerializer(games, request=request)
-    return serializer.json_response()
+
+    if platform:
+        platform_instance = Platform.objects.get(slug=platform)
+        games = games.filter(platforms=platform_instance)
+    if category:
+        category_instance = Category.objects.get(slug=category)
+        games = games.filter(category=category_instance)
+
+    serializes_games = GameSerializer(games, request=request)
+
+    return JsonResponse(serializes_games.serialize(), safe=False)
 
 
 @get_required
@@ -46,7 +60,7 @@ def review_list(request, game_slug):
 def review_detail(request, review_pk):
     try:
         review = Review.objects.get(pk=review_pk)
-    except Game.DoesNotExist:
+    except Review.DoesNotExist:
         return JsonResponse({'error': 'Review not found'}, status=404)
     else:
         review = Review.objects.get(pk=review_pk)
@@ -71,6 +85,7 @@ def add_review(request, game_slug):
         raw_token = request.headers.get('Authorization')
         uuid_pattern = r'Bearer (?P<token>[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12})'
         match = re.fullmatch(uuid_pattern, raw_token)
+
         if match:
             token = match['token']
             rating = data['rating']

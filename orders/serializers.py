@@ -1,4 +1,6 @@
+from games.serializers import GameSerializer
 from shared.serializers import BaseSerializer
+from users.serializers import UserSerializer
 
 
 class OrderSerializer(BaseSerializer):
@@ -8,10 +10,11 @@ class OrderSerializer(BaseSerializer):
     def serialize_instance(self, instance) -> dict:
         return {
             'id': instance.pk,
-            'status': instance.status,
-            'key': instance.key,
-            'user': BaseSerializer.serialize(instance.user),
-            'game': BaseSerializer.serialize(instance.game),
+            'status': instance.get_status_display(),
+            'key': instance.key if instance.get_status_display() == 'PAID' else None,
+            'user': UserSerializer(instance.user, request=self.request).serialize(),
+            'games': GameSerializer(instance.games.all(), request=self.request).serialize(),
             'created_at': instance.created_at,
             'updated_at': instance.updated_at,
+            'price': instance.price,
         }

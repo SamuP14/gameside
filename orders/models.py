@@ -14,13 +14,17 @@ class Order(models.Model):
     status = models.SmallIntegerField(choices=Status, default=Status.INITIATED)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    key = models.UUIDField(blank=True, default=uuid4)
+    key = models.UUIDField(blank=True, default=uuid4, unique=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='user_orders',
         on_delete=models.CASCADE,
     )
     games = models.ManyToManyField('games.Game', related_name='game_orders')
+
+    @property
+    def price(self):
+        return sum(game.price for game in self.games.all())
 
     def __str__(self):
         return f'{self.status}'
