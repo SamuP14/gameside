@@ -148,11 +148,7 @@ def add_game_to_order(request, order_pk):
             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
 
-def confirm_order(request):
-    return render(request)
-
-
-def cancel_order(request):
+def change_order_status(request):
     return render(request)
 
 
