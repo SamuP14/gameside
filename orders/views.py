@@ -9,6 +9,7 @@ from games.serializers import GameSerializer
 from shared import utils
 from shared.decorators import get_required, post_required
 
+from . import utils as order_utils
 from .models import Order
 from .serializers import OrderSerializer
 
@@ -185,7 +186,7 @@ def pay_order(request, order_pk):
     if order.get_status_display() != 'Confirmed':
         return JsonResponse({'error': 'Orders can only be paid when confirmed'}, status=400)
 
-    error = utils.validate_card_details(data['card-number'], data['exp-date'], data['cvc'])
+    error = order_utils.validate_card_details(data['card-number'], data['exp-date'], data['cvc'])
     if error:
         return JsonResponse({'error': error}, status=400)
 

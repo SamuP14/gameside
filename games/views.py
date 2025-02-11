@@ -1,5 +1,4 @@
 import json
-import re
 from json.decoder import JSONDecodeError
 
 from django.http import JsonResponse
@@ -7,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from categories.models import Category
 from platforms.models import Platform
+from shared import utils
 from shared.decorators import get_required, post_required
 from users.models import Token
 
@@ -78,39 +78,32 @@ def add_review(request, game_slug):
     else:
         keys = ['rating', 'comment']
 
+        if not utils.validate_required_fields(data, keys):
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+
         for key in keys:
             if key not in data.keys():
                 return JsonResponse({'error': 'Missing required fields'}, status=400)
 
-        raw_token = request.headers.get('Authorization')
-        uuid_pattern = r'Bearer (?P<token>[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12})'
-        match = re.fullmatch(uuid_pattern, raw_token)
-
-        if match:
-            token = match['token']
-            rating = data['rating']
-            comment = data['comment']
-
-            if rating < 1 or rating > 5:
-                return JsonResponse({'error': 'Rating is out of range'}, status=400)
-            else:
-                try:
-                    Token.objects.get(key=token)
-                except Token.DoesNotExist:
-                    return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
-                else:
-                    try:
-                        game = Game.objects.get(slug=game_slug)
-                    except Game.DoesNotExist:
-                        return JsonResponse({'error': 'Game not found'}, status=404)
-                    else:
-                        author = Token.objects.get(key=token).user
-                        review = Review.objects.create(
-                            rating=rating,
-                            comment=comment,
-                            game=game,
-                            author=author,
-                        )
-                        return JsonResponse({'id': review.pk}, status=200)
-        else:
+        token = utils.extract_token(request.headers.get('Authorization'))
+        if not token:
             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+
+        rating = data['rating']
+        comment = data['comment']
+
+        if rating < 1 or rating > 5:
+            return JsonResponse({'error': 'Rating is out of range'}, status=400)
+
+        user = utils.get_authenticated_user(token)
+        if not user:
+            return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
+
+        try:
+            game = Game.objects.get(slug=game_slug)
+        except Game.DoesNotExist:
+            return JsonResponse({'error': 'Game not found'}, status=404)
+        else:
+            author = Token.objects.get(key=token).user
+            review = Review.objects.create(rating=rating, comment=comment, game=game, author=author)
+            return JsonResponse({'id': review.pk}, status=200)
