@@ -11,7 +11,7 @@ class OrderSerializer(BaseSerializer):
         return {
             'id': instance.pk,
             'status': instance.get_status_display(),
-            'key': instance.key if instance.get_status_display() == 'PAID' else None,
+            'key': instance.key if instance.get_status_display() == 'Paid' else None,
             'user': UserSerializer(instance.user, request=self.request).serialize(),
             'games': GameSerializer(instance.games.all(), request=self.request).serialize(),
             'created_at': instance.created_at,
