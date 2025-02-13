@@ -27,4 +27,4 @@ class Order(models.Model):
         return sum(game.price for game in self.games.all())
 
     def __str__(self):
-        return f'{self.status}'
+        return str(self.status)

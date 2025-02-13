@@ -2,7 +2,8 @@ import re
 from datetime import datetime
 
 
-def validate_card_details(card_number, exp_date, cvc):
+def validate_card_details(card_number: str, exp_date: str, cvc: str):
+    """Valida el formato de la tarjeta de crédito/débito, su fecha de caducidad y su CVC."""
     card_pattern = r'\d{4}-\d{4}-\d{4}-\d{4}'
     date_pattern = r'\d{2}/\d{4}'
     cvc_pattern = r'\d{3}'

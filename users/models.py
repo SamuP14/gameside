@@ -14,4 +14,4 @@ class Token(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.key}'
+        return str(self.key)

@@ -4,6 +4,8 @@ from django.http import JsonResponse
 
 
 def get_required(function):
+    """Fuerza a que se utilize el método HTTP 'GET'."""
+
     @wraps(function)
     def wrap(request, *args, **kwargs):
         if request.method != 'GET':
@@ -14,6 +16,8 @@ def get_required(function):
 
 
 def post_required(function):
+    """Fuerza a que se utilize el método HTTP 'POST'."""
+
     @wraps(function)
     def wrap(request, *args, **kwargs):
         if request.method != 'POST':

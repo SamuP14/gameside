@@ -16,7 +16,8 @@ from .serializers import OrderSerializer
 
 @csrf_exempt
 @post_required
-def add_order(request):
+def add_order(request) -> str:
+    """Crea un pedido vacío."""
     token = utils.extract_token(request.headers.get('Authorization'))
     if not token:
         return JsonResponse({'error': 'Invalid authentication token'}, status=400)
@@ -30,7 +31,8 @@ def add_order(request):
 
 
 @get_required
-def order_detail(request, order_pk):
+def order_detail(request, order_pk: int) -> str:
+    """Lista los detalles de un pedido, buscado por su clave primaria."""
     token = utils.extract_token(request.headers.get('Authorization'))
     if not token:
         return JsonResponse({'error': 'Invalid authentication token'}, status=400)
@@ -52,7 +54,8 @@ def order_detail(request, order_pk):
 
 
 @get_required
-def order_game_list(request, order_pk):
+def order_game_list(request, order_pk: int) -> str:
+    """Lista todos los juegos almacenados en un pedido, buscado por su clave primaria."""
     token = utils.extract_token(request.headers.get('Authorization'))
     if not token:
         return JsonResponse({'error': 'Invalid authentication token'}, status=400)
@@ -76,7 +79,8 @@ def order_game_list(request, order_pk):
 
 @csrf_exempt
 @post_required
-def add_game_to_order(request, order_pk):
+def add_game_to_order(request, order_pk: int) -> str:
+    """Añade un juego a un pedido, buscado por su clave primaria."""
     try:
         data = json.loads(request.body)
     except JSONDecodeError:
@@ -113,7 +117,8 @@ def add_game_to_order(request, order_pk):
 
 @csrf_exempt
 @post_required
-def change_order_status(request, order_pk):
+def change_order_status(request, order_pk: int) -> str:
+    """Cambia el estado de un pedido a cancelado o confirmado, buscado por su clave primaria."""
     try:
         data = json.loads(request.body)
     except JSONDecodeError:
@@ -158,7 +163,8 @@ def change_order_status(request, order_pk):
 
 @csrf_exempt
 @post_required
-def pay_order(request, order_pk):
+def pay_order(request, order_pk: int) -> str:
+    """Cambia el estado de un pedido a pagado, buscado por su clave primaria."""
     try:
         data = json.loads(request.body)
     except JSONDecodeError:

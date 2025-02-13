@@ -36,9 +36,11 @@ class Game(models.Model):
         return self.title
 
     def rest_stock(self):
+        """Resta en 1 la cantidad de stock del juego actual."""
         self.stock -= 1
 
     def sum_stock(self):
+        """Suma en 1 la cantidad de stock del juego actual."""
         self.stock += 1
 
 
@@ -55,4 +57,4 @@ class Review(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.rating}'
+        return str(self.rating)

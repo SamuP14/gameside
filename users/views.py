@@ -12,6 +12,7 @@ from shared.decorators import post_required
 @csrf_exempt
 @post_required
 def auth(request):
+    """Devuelve el token del usuario identificado por su nombre de usuario y contraseña."""
     try:
         data = json.loads(request.body)
     except JSONDecodeError:

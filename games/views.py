@@ -15,7 +15,8 @@ from .serializers import GameSerializer, ReviewSerializer
 
 
 @get_required
-def game_list(request):
+def game_list(request) -> str:
+    """Lista todos los juegos disponibles."""
     platform = request.GET.get('platform', None)
     category = request.GET.get('category', None)
 
@@ -34,7 +35,8 @@ def game_list(request):
 
 
 @get_required
-def game_detail(request, game_slug):
+def game_detail(request, game_slug: str) -> str:
+    """Lista los detalles de un juego, buscado por su slug."""
     try:
         game = Game.objects.get(slug=game_slug)
     except Game.DoesNotExist:
@@ -45,7 +47,8 @@ def game_detail(request, game_slug):
 
 
 @get_required
-def review_list(request, game_slug):
+def review_list(request, game_slug: str) -> str:
+    """Lista todas las reseñas de un juego, buscado por su slug."""
     try:
         game = Game.objects.get(slug=game_slug)
     except Game.DoesNotExist:
@@ -57,7 +60,8 @@ def review_list(request, game_slug):
 
 
 @get_required
-def review_detail(request, review_pk):
+def review_detail(request, review_pk: int) -> str:
+    """Lista los detalles de una reseña, buscada por su clave primaria."""
     try:
         review = Review.objects.get(pk=review_pk)
     except Review.DoesNotExist:
@@ -70,7 +74,8 @@ def review_detail(request, review_pk):
 
 @csrf_exempt
 @post_required
-def add_review(request, game_slug):
+def add_review(request, game_slug: str) -> str:
+    """Añade una reseña un juego, buscado por su slug."""
     try:
         data = json.loads(request.body)
     except JSONDecodeError:

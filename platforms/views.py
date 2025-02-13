@@ -7,14 +7,16 @@ from .serializers import PlatformSerializer
 
 
 @get_required
-def platform_list(request):
+def platform_list(request) -> str:
+    """Lista todas las plataformas disponibles."""
     platforms = Platform.objects.all()
     serializer = PlatformSerializer(platforms, request=request)
     return serializer.json_response()
 
 
 @get_required
-def platform_detail(request, platform_slug):
+def platform_detail(request, platform_slug: str) -> str:
+    """Lista los detalles de una plataforma, buscada por su slug."""
     try:
         platform = Platform.objects.get(slug=platform_slug)
     except Platform.DoesNotExist:
