@@ -11,6 +11,10 @@ pip-cmd := shell('if [ -x "$(command -v uv)" ]; then echo "uv pip"; else echo "p
 runserver: check-venv kill-runservers
     ./manage.py runserver
 
+# Launch semi-production server
+runserver-prod: check-venv kill-runservers
+    ./manage.py runserver 0.0.0.0:8000
+
 # Launch Django interactive shell
 sh: check-venv
     ./manage.py shell
